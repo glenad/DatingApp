@@ -1,0 +1,120 @@
+learnings
+---------
+path cannot contain "#", as in "c#" as this won't work for angular!
+dotnet new webapi -o DatingApp.API -n DatingApp.API
+dotnet watch run
+Autosave (on file menu)
+create Models: Value, create Data: DataContext (inherit from DbContext class)
+ctor: public DataContext(DbContextOptions<DataContext> options) : base (options) { }
+prop: public DbSet<Value> Values { get; set; } 
+ctrl + shift + P, nuget, Microsoft.EntityFrameworkCore.Sqlite
+services.AddDbContext<DataContext>(x => x.UseSqlite(Configuration.GetConnectionString("DefaultConnection")));
+dotnet ef migrations add InitialCreate
+dotnet ef database update
+
+using the DataContext in the controller...
+add a ctor that accepts the DataContext as param, and also add _context as a field
+then to get values in the GetValues():
+  _context.Values.ToList();
+and to get a specific value in GetValue(int id):
+  _contect.Values.FirstOrDefault(x => x.Id == id)
+How to make methods asyncronous: async Task<IActionResult>, await, ToListAsync(), FirstOrDefaultAsync()
+
+npm install -g @angular/cli@6.2.5
+ng new DatingApp-SPA
+ng serve
+
+1 Mar 2019
+----------
+angular.json - config to bootstrap angular (incl. abstraction of webpack) calls src\main.ts
+src\main.ts -> bootstraps app\app.module -> bootstraps app\app.component.ts 
+app.components.ts - sets the title (used in app.component.html) and app-root selector (used in index.html) 
+
+useful extensions:
+-----------------
+angular v7 snippets - John Papa
+angular files - 'generate component' etc
+angular language service - gives goto definition
+angular 2 switcher - alt+o, alt+u to switch betw .ts and .html
+auto rename tag
+brackets pair colorizer
+debugger for chrome
+material icon theme
+path intellisense - autocompletes file names
+prettier - code formatting
+tslint (microsoft)
+
+adding an angular component - 4 Mar 2019
+----------------------------------------
+right click app folder, "Generate Component"
+-> this creates the value folder with value.component.* (cs, html, ts & spec.ts files), 
+-> also adds 'ValueComponent' to declarations in app.module.ts
+-> and it adds import { ValueComponent } in app.module.ts
+
+add the http module import in app.module.ts
+-> import { HttpClientModule } from '@angular/common/http';
+-> add to imports section
+
+add the code to values.components.ts to be able to get the value from the api calls
+ (similar to injecting the DbContext within ASP.NET)
+ (so we pass HttpClient through the constructor)
+  constructor(private http: HttpClient) { }
+ (then we need to use an http.get method to return the api values and we do this by subscribing to the response [something called an observable])
+  getValues() {
+    this.http.get('http//:localhost:5000/api/values').subscribe(response => {
+      this.values = response;
+    }, error => {
+      console.log(error)
+    })
+  }
+ (and finally the getValues method is called on the ngOnInit event)
+  ngOnInit() {
+    this.getValues();
+  }
+
+now we go to value.component.html and update the presentation layer to display the values
+  alt + o -> .html
+  alt + u -> .ts
+  first cleanup the app.component.html, getting rid of the tutorial links
+  then add the <app-value> component to app.component.html
+    <div style="text-align:center">
+      <h1>
+        Welcome to {{ title }}!
+      </h1>
+      <app-value></app-value> 
+    </div>  
+
+cross origin resource sharing - 5 Mar
+-------------------------------------
+the api call has different address to angular address, therefore CORS needs enabling for the browser to display the results and prevent error
+so in Startup.cs, need to inject CORS into ConfigureServices:
+  services.AddCors();
+then add into the pipeline (Configure() method), the order of pipeline items is nb, must come before Mvc
+  app.UseCors(x => x.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader());
+
+display the values on the page
+------------------------------
+in value.component.html, in first <p type a-ngfor, which uses intellisense to inser the angular for loop
+becomes *ng - this indicates a structural directive...
+
+Adding bootstrap and font awesome - 6 Mar
+-----------------------------------------
+cd into SPA
+npm install bootstrap font-awesome
+then import in styles.css (could also import in angular.json styles[], but it does not let you control order of css cascades):
+	@import '../node_modules/bootstrap/dist/css/bootstrap.min.css';
+	@import '../node_modules/font-awesome/css/font-awesome.min.css';
+then make some small changes in app.component.html, to test that font changes to use bootstrap
+
+Git
+---
+download git from git-scm
+remove the git that angular setup in SPA folder i.e. delete .git folder but keep .gitignore file
+git status
+in the parent folder, initialise git:
+  git init
+add .gitignore file to API directory, ignore: .vscode, obj, bin, *.db
+do the initial commit in vs code, source control: type message, + to stage, ctrl + enter to commit
+add a new repository in github
+git remote add origin https://github.com/glenad/DatingApp
+use "push to" in the source control screen

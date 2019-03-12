@@ -1,0 +1,43 @@
+creating a password hash, using a salt, and storing it in the db
+----------------------------------------------------------------
+add a User model:
+    public class User
+    {
+        public int Id { get; set; }
+        public string Username { get; set; }
+        public byte[] PasswordHash { get; set; }
+        public byte[] PasswordSalt { get; set; }
+    }
+
+add the model to the database context:
+    public DbSet<User> Users { get; set; }
+
+add the migration so entity framework knows about it:
+    dotnet ef migrations add AddedUserEntity
+
+check that above was successful in migrations folder:
+    e.g 20190228152232_AddedUserEntity.cs
+    => check the name of the table and column names and types
+
+create the User table in the database:
+    dotnet ef database update
+
+use the repository pattern
+--------------------------
+centralise your interaction with the database
+currently, there is already an abstraction:
+    controller -> entity framework -> database
+now we want:
+    controller -> repository -> entity framework -> database
+
+the repository pattern consists of a) an interface b) a concrete class
+reasons for using:
+a) minimises duplicate code b) decouples c) db code stored in one place d) testability
+
+so create an IAuthRepository in /Data:
+    public interface IAuthRepository
+    {
+         Task<User> Register(User user, string password);
+         Task<User> Login(string username, string password);
+         Task<bool> UserExists(string username);
+    }
