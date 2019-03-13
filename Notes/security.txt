@@ -41,3 +41,71 @@ so create an IAuthRepository in /Data:
          Task<User> Login(string username, string password);
          Task<bool> UserExists(string username);
     }
+
+create the concrete class that implements the IAuthRepository interface:
+    inject the ef data context in the constructor
+    implement the login, register and UserExists methods using HMAC (hash-based message authentication code) from System.Security.Cryptography
+
+register IAuthRepository, and AuthRepository for dependency injection in Startup.cs:
+    services.AddScoped<IAuthRepository, AuthRepository>(); (AddSingleton and AddTransient are also options)
+    AddScoped means it is created once per request, within the current scope
+
+creating the AuthController register method
+    the [ApiController] attribute available from dotnet core 2.1, means that if used you need to use "attribute routing rather than 
+    conventional routing", it also automatically validates our request
+    inheriting from ControllerBase also gives access to Http responses and Actions that can be used within controller
+    Controller - with View support
+    ControllerBase - without View support
+    Our view support comes from within angular, just using dotnet core for the api not for views, so we only use ControllerBase
+    so the Register method:
+        receives the username and password
+        checks if the username already exists and returns BadRequest if it does
+        news up the User object
+        passes User to the _repo.Register method along with the password
+        the repo hashes the password and stores the user (with username, password salt and password hash in the db using ef)
+        returns a status 201
+
+using data transfer objects
+    this just makes it easier to deal with the json object coming from the client, so is a further layer of abstraction
+    video #30 - also shows how to attach to the debugger
+
+validation and data annotations added to the doto
+    video #31
+    attributes can be added to methods by using System.ComponentModel.DataAnnotations
+    e.g. [Required], [EmailAddress], [Phone], [StringLength(8, MinimumLength=4, ErrorMessage="Password must be greater than 4 characters")]
+    demonstration of how [ApiController] is required with Dtos, otherwise have to use [FromBody] attribute within the method argument, 
+        and a ModelState check would be required:
+            if (!ModelState.IsValid) 
+            {
+                return BadRequest(ModelState);
+            }
+
+jwt - json web token RFC7519
+    header (alg, typ), payload (nameid, unique_name, nbf, iat, exp), secret
+
+creating the login method which returns a jwt to the client
+    video #33
+    need to inject IConfiguration into the ctor for AuthController:
+        public AuthController(IAuthRepository repo, IConfiguration config)
+        {
+            _config = config;
+            _repo = repo;
+        }
+    create the login method which accepts a new userForLoginDto object
+    get the user from _repo.Login
+    create the claims in login method
+    create a key from the config
+    create the AppSettings, Token section in the config in appsettings.json
+    create the signing credentials
+    create the tokenDescriptor, the tokenHandler and finally the token itself, and return it with an Ok() response
+    use postman to call the login method and view the token in the response, view token at jwt.io
+
+using Authentication middleware
+    video #34
+    test out the authorized operations in the ValuesController
+    add an [Authorize] attribute on top of the class
+    for demo purposes, if you want a method to be exempt from authorization use [AllowAnonymous]
+    add authentication as a service to the Startup.cs:
+    
+
+
